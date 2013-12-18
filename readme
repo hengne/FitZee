@@ -2,8 +2,14 @@
 
 using finner binning of eta-scale
 
+/afs/cern.ch/user/h/heli/work/private/calib/2013Nov06/FitEBEE/fitEEEtaScaleV2
 20 Eta scale bins per EE
+
+/afs/cern.ch/user/h/heli/work/private/calib/2013Nov06/FitEBEE/fitEEEtaScaleV3
 now 40 Eta bins per EE
 
+/afs/cern.ch/user/h/heli/work/private/calib/2013Nov06/FitEBEE/fitEEEtaScaleV4
+40 Eta bins per EE and do ABCD 4 runs separately. 
 
-I made a change here, to be updated at another place.
+ 
+

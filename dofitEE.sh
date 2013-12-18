@@ -14,6 +14,10 @@ IZ=$3
 #fit method
 METHOD=$4
 
+#mode
+
+MODE=$5
+
 #Gaussian Resolution
 GAUSRESO="1.0"
 
@@ -27,7 +31,7 @@ ETASCALEFILE="etascale_V8Elec_Mode76_Method7_A_1.dat;etascale_V8Elec_Mode76_Meth
 DEBUG="1"
 
 #do odd if 1 , even if 2, both if 0
-DOEVENODD="0"
+DOEVENODD="1"
 
 #initilize working area
 TOP=$PWD
@@ -37,7 +41,6 @@ DATA=/eos/cms/store/user/heli/2013Nov06/ShervinDataEE
 alias eos='/afs/cern.ch/project/eos/installation/0.2.31/bin/eos.select'
  
 
-MODE=0
 
 ROOTFILEIN=CombRegV8ZeeData_IZ${IZ}_IX${IDX}_ABCD.root
 ROOTFILEOUT=fitzee_out_IZ${IZ}_IX${IDX}_${NTIME}_ABCD.root
@@ -48,7 +51,6 @@ LOGFILE=fitzee_out_IZ${IZ}_IX${IDX}_${NTIME}_ABCD.log
 
 if [ $NTIME -ge 2 ];
 then
-  MODE=33
   TABLEIN="calibTable_in_IZ${IZ}_IX${IDX}_${NTIME}_ABCD.dat"
   TABLEREF="calibTableRef_$((NTIME-1))_ABCD.dat"
 fi
@@ -114,7 +116,7 @@ echo "run"
 date
 
 echo "copy output"
-OUTDIR="${SOURCE}/out_${NTIME}_method${METHOD}_EvenOdd${DOEVENODD}"
+OUTDIR="${SOURCE}/out_${NTIME}_method${METHOD}_mode${MODE}_evenodd${DOEVENODD}"
 if [ ! -d $OUTDIR ];
 then
   mkdir $OUTDIR

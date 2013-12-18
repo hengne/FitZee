@@ -20,12 +20,17 @@ typedef struct
 
 // store all events
 int nEventsAll, nSignalsAll;
+std::vector<Int_t> allRunNum;
+std::vector<ULong64_t> allEvtNum; 
 std::vector<double> allE1, allEReg1, allEta1, allPhi1;
 std::vector<double> allE2, allEReg2, allEta2, allPhi2;
 std::vector<int> allnHits1, allnHits2;
 std::vector< std::vector<double> > allHitE1, allHitE2;
 std::vector< std::vector<int> > allHitIX1, allHitIY1, allHitIZ1;
 std::vector< std::vector<int> > allHitIX2, allHitIY2, allHitIZ2;
+std::vector<int> allSeedIX1, allSeedIY1, allSeedIZ1;
+std::vector<int> allSeedIX2, allSeedIY2, allSeedIZ2;
+std::vector<double> allRawEEcal1, allRawEEcal2;
 
 // store selected events
 int nEvents, nSignals;
@@ -37,6 +42,9 @@ std::vector< std::vector<int>* > HitIX1, HitIY1, HitIZ1;
 std::vector< std::vector<int>* > HitIX2, HitIY2, HitIZ2;
 std::vector<bool> UseEle1, UseEle2;
 std::vector<int> ScaleBin1, ScaleBin2;
+std::vector<int*> SeedIX1, SeedIY1, SeedIZ1;
+std::vector<int*> SeedIX2, SeedIY2, SeedIZ2;
+std::vector<double*> RawEEcal1, RawEEcal2;
 
 // variables for ROOT Tree
 Int_t           runNum;
@@ -173,16 +181,24 @@ void FillAllEvents(TChain* tree, const int debug=0, const std::string regVersion
   for (int i=0; i<nEventsAll; i++){
     // get event from tree
     tree->GetEntry(i);
-    
+
+    allRunNum.push_back(runNum);
+    allEvtNum.push_back(evtNum);
+  
     // first electron
     //allE1.push_back(rE[0]);
-    allE1.push_back(rERaw[0]+rPresE[0]); // SC raw as in Regression
+    //allE1.push_back(rERaw[0]+rPresE[0]); // SC raw as in Regression
+    allE1.push_back(rERaw[0]); // SC raw as in Regression
     if(regVersion=="V5Elec") allEReg1.push_back(rERegV5Elec[0]);
     else if(regVersion=="V6Elec") allEReg1.push_back(rERegV6Elec[0]);
     else if(regVersion=="V7Elec") allEReg1.push_back(rERegV7Elec[0]);
     else allEReg1.push_back(rERegV8Elec[0]);    
     allEta1.push_back(rEta[0]);
     allPhi1.push_back(rPhi[0]);
+    allRawEEcal1.push_back(rERaw[0]-rPresE[0]);
+    allSeedIX1.push_back(rSeedIX[0]);
+    allSeedIY1.push_back(rSeedIY[0]);
+    allSeedIZ1.push_back(rSeedIZ[0]);
     // if fit scale, then we don't need the following information
     if(!fitscale) 
     {
@@ -202,13 +218,18 @@ void FillAllEvents(TChain* tree, const int debug=0, const std::string regVersion
     }
     // second electron
     //allE2.push_back(rE[1]);
-    allE2.push_back(rERaw[1]+rPresE[1]); // SC raw as in Regression
+    //allE2.push_back(rERaw[1]+rPresE[1]); // SC raw as in Regression
+    allE2.push_back(rERaw[1]); // SC raw as in Regression
     if(regVersion=="V5Elec") allEReg2.push_back(rERegV5Elec[1]);
     else if(regVersion=="V6Elec") allEReg2.push_back(rERegV6Elec[1]);
     else if(regVersion=="V7Elec") allEReg2.push_back(rERegV7Elec[1]);
     else allEReg2.push_back(rERegV8Elec[1]);
     allEta2.push_back(rEta[1]);
     allPhi2.push_back(rPhi[1]);
+    allRawEEcal2.push_back(rERaw[1]-rPresE[1]);
+    allSeedIX2.push_back(rSeedIX[1]);
+    allSeedIY2.push_back(rSeedIY[1]);
+    allSeedIZ2.push_back(rSeedIZ[1]);
     // if fit scale, then we don't need the following information
     if(!fitscale)
     {
@@ -583,6 +604,119 @@ int SelectEventsInOneCellWithFractionEBorEECombine(int ix, int iy, int iz, doubl
 
 }
 
+int SelectEventsInOneSeed(int ix, int iy, int iz, bool doEvenOdd=0, std::string Combine="")
+{
+  // clear previous vectors
+  nEvents = 0;
+  nSignals = 0;
+  E1.clear();
+  EReg1.clear();
+  Eta1.clear();
+  Phi1.clear();
+  E2.clear();
+  EReg2.clear();
+  Eta2.clear();
+  Phi2.clear();
+  nHits1.clear();
+  nHits2.clear();
+  HitE1.clear();
+  HitE2.clear();
+  HitIX1.clear();
+  HitIY1.clear();
+  HitIZ1.clear();
+  HitIX2.clear();
+  HitIY2.clear();
+  HitIZ2.clear();
+
+  UseEle1.clear();
+  UseEle2.clear();
+  RawEEcal1.clear();
+  RawEEcal2.clear();
+  SeedIX1.clear();
+  SeedIX2.clear();
+  SeedIY1.clear();
+  SeedIY2.clear();
+  SeedIZ1.clear();
+  SeedIZ2.clear();
+
+  // loop over all events and select events
+  for (int i=0; i<nEventsAll; i++)
+  {
+ 
+    // even odd check
+    if (doEvenOdd==1 && allEvtNum[i]%2==0) continue;
+    else if (doEvenOdd==2 && allEvtNum[i]%2==1) continue;
+
+    // EB or EE combinatioin check
+    if ( Combine=="EBEB" ) // both in EB
+    {
+      if ( !(fabs(allEta1[i])<1.48&&fabs(allEta2[i])<1.48) ) continue;
+    }
+    if ( Combine=="EBEE" ) // one in EB one in EE
+    {
+      if ( !( (fabs(allEta1[i])<1.48&&fabs(allEta2[i])>1.48)||(fabs(allEta2[i])<1.48&&fabs(allEta1[i])>1.48) ) ) continue;
+    }
+    if ( Combine=="EEEE" ) // both in EE
+    {
+      if ( !(fabs(allEta1[i])>1.48&&fabs(allEta2[i])>1.48) ) continue;
+    }
+    if ( Combine=="EE" ) // any one of the two in EE
+    {
+      if ( !(fabs(allEta1[i])>1.48||fabs(allEta2[i])>1.48) ) continue;
+    }
+    if ( Combine=="EB" ) // any one of the two in EB
+    {
+      if ( !(fabs(allEta1[i])<1.48||fabs(allEta2[i])<1.48) ) continue;
+    }
+
+    // check if e1 or e2 is in the cell to be fitted
+    bool takeEle1(false), takeEle2(false);
+    // e1
+    if (allSeedIX1.at(i)==ix &&
+        allSeedIY1.at(i)==iy &&
+        allSeedIZ1.at(i)==iz )
+    {
+       takeEle1=true;
+    }
+    // e2
+    if (allSeedIX2.at(i)==ix &&
+        allSeedIY2.at(i)==iy &&
+        allSeedIZ2.at(i)==iz )
+    {
+       takeEle2=true;
+    }
+    // if do not decide to take this event, continue
+    if (!takeEle1&&!takeEle2)
+    {
+      continue;
+    }
+
+    // if not continue above, it is a useful event to use
+    E1.push_back(&(allE1.at(i)));
+    EReg1.push_back(&(allEReg1.at(i)));
+    Eta1.push_back(&(allEta1.at(i)));
+    Phi1.push_back(&(allPhi1.at(i)));
+    E2.push_back(&(allE2.at(i)));
+    EReg2.push_back(&(allEReg2.at(i)));
+    Eta2.push_back(&(allEta2.at(i)));
+    Phi2.push_back(&(allPhi2.at(i)));
+
+    RawEEcal1.push_back(&(allRawEEcal1.at(i)));  
+    RawEEcal2.push_back(&(allRawEEcal2.at(i)));  
+
+    UseEle1.push_back(takeEle1);
+    UseEle2.push_back(takeEle2);
+
+  }
+
+  // nEvents
+  nEvents = (int)E1.size();
+  nSignals = nEvents; // assume no background (fix me)
+  //
+  return nEvents;
+
+}
+
 //
 // Store the selection in E1, Eta1, .. E2, Eta2, .. HitE1, ... vectors.
 // select events according to the following rule:
@@ -826,11 +960,13 @@ int SelectEventsInOneEtaBin(double bin_min, double bin_max, std::string Combine=
   E1.clear();
   EReg1.clear();
   Eta1.clear();
+  UseEle1.clear();
   Phi1.clear();
   E2.clear();
   EReg2.clear();
   Eta2.clear();
   Phi2.clear();
+  UseEle2.clear();
 
   // loop over all events and select events
   for (int i=0; i<nEventsAll; i++)
@@ -1078,6 +1214,7 @@ void ApplyEtaScaleToAllEvents(const std::vector<double>& EtaBins,const std::vect
 
 }
 
+//
 void ApplyEtaScaleToAllEvents(const std::vector<EnergyScale>& EtaScale)
 {
   // loop over all events
@@ -1100,7 +1237,60 @@ void ApplyEtaScaleToAllEvents(const std::vector<EnergyScale>& EtaScale)
 }
 
 //////////
+void ApplyEtaScaleToAllEventsABCD(const std::vector<EnergyScale>& EtaScaleA, 
+                                  const std::vector<EnergyScale>& EtaScaleB,
+                                  const std::vector<EnergyScale>& EtaScaleC,
+                                  const std::vector<EnergyScale>& EtaScaleD)
+{
+  // ABCD runNum range
+  const int Amin(190645), Amax(193621);
+  const int Bmin(193834), Bmax(196531);
+  const int Cmin(198022), Cmax(203742);
+  const int Dmin(203777), Dmax(208686);
 
+  // counts
+  int NumA(0), NumB(0), NumC(0), NumD(0), NumAll(0);
+
+  // loop over all events
+  for (int i=0; i<nEventsAll; i++)
+  {
+    // define an empty reference EtaScale vector
+    const std::vector<EnergyScale> *EtaScale;
+
+    // check run range
+    if (allRunNum.at(i)>=Amin&&allRunNum.at(i)<=Amax) { EtaScale = &EtaScaleA; NumA++;}
+    else if (allRunNum.at(i)>=Bmin&&allRunNum.at(i)<=Bmax) { EtaScale = &EtaScaleB; NumB++;}
+    else if (allRunNum.at(i)>=Cmin&&allRunNum.at(i)<=Cmax) { EtaScale = &EtaScaleC; NumC++;}
+    else if (allRunNum.at(i)>=Dmin&&allRunNum.at(i)<=Dmax) { EtaScale = &EtaScaleD; NumD++;}
+    else continue;
+    
+    // count 
+    NumAll++;
+    
+    // findout which bins it belongs to
+    int bin1(-1), bin2(-1);
+    for (int ibin=0; ibin<(int)EtaScale->size(); ibin++)
+    {
+      if (allEta1.at(i)>EtaScale->at(ibin).min&&allEta1.at(i)<EtaScale->at(ibin).max) bin1 = ibin;
+      if (allEta2.at(i)>EtaScale->at(ibin).min&&allEta2.at(i)<EtaScale->at(ibin).max) bin2 = ibin;
+    }
+
+    // apply eta scale
+    if (bin1>=0) allEReg1.at(i) *= EtaScale->at(bin1).s;
+    if (bin2>=0) allEReg2.at(i) *= EtaScale->at(bin2).s;
+
+  }
+
+  std::cout << "variables.h:: ApplyEtaScaleToAllEventsABCD(): INFO: " 
+        << "NevtsAll: " << NumAll << "; "  
+        << "NevtsA: " << NumA << "; "
+        << "NevtsB: " << NumB << "; "
+        << "NevtsC: " << NumC << "; "
+        << "NevtsD: " << NumD  
+        << std::endl;
+}
+
+///////////
 
 // select groups of events according to a vector of cells,
 // such as a supercluster.

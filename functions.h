@@ -268,6 +268,76 @@ public:
     }
 
   }
+
+  void initDataSeed(int nEvents, int nSignals,
+                const std::vector<double*>& E1,
+                const std::vector<double*>& EReg1,
+                const std::vector<double*>& Eta1,
+                const std::vector<double*>& Phi1,
+                const std::vector<bool>& UseEle1,
+                const std::vector<double*>& RawEEcal1,
+                const std::vector<double*>& E2,
+                const std::vector<double*>& EReg2,
+                const std::vector<double*>& Eta2,
+                const std::vector<double*>& Phi2,
+                const std::vector<bool>& UseEle2,
+                const std::vector<double*>& RawEEcal2,
+                const int debug=0,
+                const int method=0)
+  {
+    // debug
+    _debug = debug;
+
+    // method to calculate Mee
+    _method = method;
+
+    // nEvents and nSignals
+    _nEvents = nEvents;
+    _nSignals = nSignals;
+
+    // initialize data
+    _E1 = E1;
+    _EReg1 = EReg1;
+    _Eta1 = Eta1;
+    _Phi1 = Phi1;
+    _UseEle1 = UseEle1;
+    _RawEEcal1 = RawEEcal1;
+    _E2 = E2;
+    _EReg2 = EReg2;
+    _Eta2 = Eta2;
+    _Phi2 = Phi2;
+    _UseEle2 = UseEle2;
+    _RawEEcal2 = RawEEcal2;
+
+    // check nEvents correct or not
+    if (_nEvents != (int)E1.size()) {
+      std::cout << "BWGSLikelihoodFCN:: "
+      << "The nEvents given and the nEvents from the data vectors (e.g. E1[nEvents]) are not the same. \n"
+      << "    Use the nEvents in data vectors as the nEvents."
+      << std::endl;
+      _nEvents = (int)E1.size();
+    }
+
+    // clear calculated data vectors and re-calculate again right after
+    _Mass.clear();
+    _MassRecalc.clear();
+    _MassRecalcWeight.clear();
+
+    // clear calculated data vectors and re-calculate again right after
+    _Mass.clear();
+    _MassRecalc.clear();
+    _MassRecalcWeight.clear();
+
+    // calculate data
+    for (int i=0; i<(int)E1.size(); i++){
+      double mass = CalcMass(*(E1.at(i)), *(Eta1.at(i)), *(Phi1.at(i)), *(E2.at(i)), *(Eta2.at(i)), *(Phi2.at(i)));
+      _Mass.push_back(mass);
+      _MassRecalc.push_back(mass);
+      _MassRecalcWeight.push_back(1.0);
+    }
+
+  }
+
  
   void initData(int nEvents, int nSignals,
                 const std::vector<double*>& E1,
@@ -1305,6 +1375,30 @@ public:
         E2 = EReg2;
 
       }
+      else if (method==8)
+      {
+        // Method 8 is to fit the IC by applying the IC of the Seed crystal to the rawEnergy of the whole SC.
+        //   Each time fit only one crystal in the following steps:
+        //   1.) select events with electrons having there Seed hits in the crystal of the IC to be fitted.
+        //   2.) the minimization varies the IC and recalculates the electron's energy by applying the IC of
+        //        the cyrstal being fitted to the raw energy of the whole SC (many crystals/hits).
+
+        // regression energy
+        double EReg1 = *(_EReg1.at(i));
+        double EReg2 = *(_EReg2.at(i));
+        // raw ecal energy
+        double RawEEcal1 = *(_RawEEcal1.at(i));
+        double RawEEcal2 = *(_RawEEcal2.at(i));
+        // 
+        // apply energy scale
+        if (_UseEle1.at(i)) EReg1 = (EReg1/E1)*(RawEEcal1*par.at(0)+(E1-RawEEcal1));
+        if (_UseEle2.at(i)) EReg2 = (EReg2/E2)*(RawEEcal2*par.at(0)+(E2-RawEEcal2));
+
+        // energy after energy scale
+        E1 = EReg1;
+        E2 = EReg2;
+
+      }
 
       if(_debug>3 && i%n_interval==0) 
       {
@@ -1661,6 +1755,8 @@ private:
   std::vector<int> _ScaleBin1;
   std::vector<int> _ScaleBin2;
   
+  std::vector<double*> _RawEEcal1; 
+  std::vector<double*> _RawEEcal2;
  
   std::vector<double> _Mass;
   mutable std::vector<double> _MassRecalc;

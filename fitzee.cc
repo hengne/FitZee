@@ -51,12 +51,16 @@ double gaus_reso = 2.0;
 double hitEnergyFraction = 0.3;
 
 int debug = 0;
-char rootfile_in[300];
-char rootfile_out[300];
-char calibtable_ref[300];
-char calibtable_in[300];
-char calibtable_out[300];
-char etascale_ref[300];
+char rootfile_in[3000];
+char rootfile_out[3000];
+char calibtable_ref[3000];
+char calibtable_in[3000];
+char calibtable_out[3000];
+char etascale_ref[3000];
+char etascale_refA[3000];
+char etascale_refB[3000];
+char etascale_refC[3000];
+char etascale_refD[3000];
 
 // even or odd events
 int doEvenOdd = 0; // 0 for not to split, 1 for odd, 2 for even 
@@ -71,7 +75,7 @@ int main(int argc, char* argv[])
     std::cout << argv[0] << " <mode> <input_file.root> <output_file.root> \\\n"
               << " <input_calibTable.dat> <out_calibTable.dat> <ref_calibTable.dat>\\\n" 
               << " <signalFraction> <method> <GaussResolution> <hitEnergyFraction> <debug> \\\n"
-              << " <doEvenOdd> <etascale_reference_file.dat>"
+              << " <doEvenOdd> <etascale_reference_files>"
     << std::endl;
     return 0;
   }
@@ -126,8 +130,39 @@ int main(int argc, char* argv[])
       return 1;
     }
   }
+
+  // mode 33 41
+  if (mode==33||mode==41)
+  {
+    if (argc<=13)
+    {
+      std::cout << "Missing etascale reference file. Please run " << argv[0] << " to print usage information. " << std::endl;
+      return 1;
+    }
+    else
+    {
+      std::string s(argv[13]);
+      std::string delimiter = ";";
+      std::vector<std::string> ss;
+      size_t pos = 0;
+      std::string token;
+      while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        s.erase(0, pos + delimiter.length());
+        ss.push_back(token); 
+      }
+      ss.push_back(s);
+
+      sprintf(etascale_refA, "%s", ss.at(0).c_str());
+      sprintf(etascale_refB, "%s", ss.at(1).c_str());
+      sprintf(etascale_refC, "%s", ss.at(2).c_str());
+      sprintf(etascale_refD, "%s", ss.at(3).c_str());
+
+    }
+
+  }
  
-  std::cout << "fitzee.exe " << std::endl;
+  std::cout << argv[0] << std::endl;
   std::cout << "  mode = " << mode << std::endl;
   std::cout << "  method = " << method << std::endl;
   std::cout << "  rootfile_in = " << rootfile_in << std::endl;
@@ -140,6 +175,13 @@ int main(int argc, char* argv[])
   std::cout << "  hitEnergyFraction = " << hitEnergyFraction << std::endl;
   std::cout << "  doEvenOdd = " << doEvenOdd << std::endl;
   if (mode==31||mode==32) std::cout << "  EtaScale Reference File = " << etascale_ref << std::endl; 
+  if (mode==33||mode==41) 
+  {
+    std::cout << "  EtaScale Reference File A = " << etascale_refA << std::endl; 
+    std::cout << "  EtaScale Reference File B = " << etascale_refB << std::endl; 
+    std::cout << "  EtaScale Reference File C = " << etascale_refC << std::endl; 
+    std::cout << "  EtaScale Reference File D = " << etascale_refD << std::endl; 
+  }
   std::cout << " Start program. " << std::endl;
   
   // reading data
@@ -212,6 +254,85 @@ int main(int argc, char* argv[])
       reffile.close();
     }
   }
+
+  // reference scale for mode 33
+  std::vector<EnergyScale> EtaScaleRefA;
+  std::vector<EnergyScale> EtaScaleRefB;
+  std::vector<EnergyScale> EtaScaleRefC;
+  std::vector<EnergyScale> EtaScaleRefD;
+  if (mode==33||mode==41)
+  {
+    // read reference scales
+    // A
+    std::ifstream reffileA(etascale_refA);
+    if (reffileA.is_open())
+    {
+      std::string line;
+      EnergyScale scale;
+      while (getline(reffileA,line))
+      {
+        std::stringstream sline(line);
+        sline >> scale.min
+            >> scale.max
+            >> scale.s
+            >> scale.serr;
+        EtaScaleRefA.push_back(scale);
+      }
+      reffileA.close();
+    }
+    // B
+    std::ifstream reffileB(etascale_refB);
+    if (reffileB.is_open())
+    {
+      std::string line;
+      EnergyScale scale;
+      while (getline(reffileB,line))
+      {
+        std::stringstream sline(line);
+        sline >> scale.min
+            >> scale.max
+            >> scale.s
+            >> scale.serr;
+        EtaScaleRefB.push_back(scale);
+      }
+      reffileB.close();
+    }
+    // C
+    std::ifstream reffileC(etascale_refC);
+    if (reffileC.is_open())
+    {
+      std::string line;
+      EnergyScale scale;
+      while (getline(reffileC,line))
+      {
+        std::stringstream sline(line);
+        sline >> scale.min
+            >> scale.max
+            >> scale.s
+            >> scale.serr;
+        EtaScaleRefC.push_back(scale);
+      }
+      reffileC.close();
+    }
+    // D
+    std::ifstream reffileD(etascale_refD);
+    if (reffileD.is_open())
+    {
+      std::string line;
+      EnergyScale scale;
+      while (getline(reffileD,line))
+      {
+        std::stringstream sline(line);
+        sline >> scale.min
+            >> scale.max
+            >> scale.s
+            >> scale.serr;
+        EtaScaleRefD.push_back(scale);
+      }
+      reffileD.close();
+    }
+  }
+
  
   if (!nEvents)
   {
@@ -226,6 +347,7 @@ int main(int argc, char* argv[])
                         E1, EReg1, Eta1, Phi1, nHits1, HitE1, HitIX1, HitIY1, HitIZ1,
                         E2, EReg2, Eta2, Phi2, nHits2, HitE2, HitIX2, HitIY2, HitIZ2,
                         debug, method);
+  //BWGSLikelihoodFCN fcn();
 
   if (debug>0) std::cout << " Step 1: Initialize PDF overall " << std::endl;
   // initialize PDF
@@ -286,9 +408,11 @@ int main(int argc, char* argv[])
       //nEvents = SelectEventsInOneCell(ix, iy, iz);
       //nEvents = SelectEventsInOneCellWithFraction(ix, iy, iz, hitEnergyFraction);
       nEvents = SelectEventsInOneCellWithFractionEBorEECombine(ix, iy, iz, hitEnergyFraction, doEvenOdd, _combine);
-      // define the signal fraction
+ 
+     // define the signal fraction
       nSignals = int(signalFraction*(double)nEvents);
-      
+     
+ 
       std::cout << "ic = " << ic << ", " << "nEvents = " << nEvents << std::endl;
       
       // initialize fcn using this set of events
@@ -560,15 +684,16 @@ int main(int argc, char* argv[])
 
     }
   }
-  else if (mode==3 || mode==31 ||  mode==32)
+  else if (mode==3 || mode==31 ||  mode==32 || mode==33)
   {
     // mode 3 is similar to mode 1, but trying to fit several crystalls at once,
     //  automatically find 3x3 cells around it
     // mode 31 is to apply pre-defined eta-scales before fits
     // mode 32 is the same as mode 31 just use a different eta-scale format
+    // mode 33 is the same as mode 32 but do runs A B C D seperately.
 
-    if (debug>0) std::cout << " Step 2: Fit cell-by-cell, inside mode 3 or 31" << std::endl;
-    // but initialize calibTableRef using the full table, for method 2
+    if (debug>0) std::cout << " Step 2: Fit cell-by-cell, inside mode 3 31 32 33" << std::endl;
+    // but initialize calibTableRef using the full table
     fcn.initCalibTableRef(calibtable_ref);
 
     // apply eta-scale
@@ -590,6 +715,13 @@ int main(int argc, char* argv[])
       if (debug>0) std::cout << " Step 2: Apply Eta-scale to all events, inside mode 32" << std::endl;
       // apply ref eta-scale
       ApplyEtaScaleToAllEvents(EtaScaleRef);
+    }
+    else if (mode==33)
+    {
+      if (debug>0) std::cout << " Step 2: Apply Eta-scale to all events, inside mode 33" << std::endl;
+      // apply ref eta-scale
+      ApplyEtaScaleToAllEventsABCD(EtaScaleRefA, EtaScaleRefB, EtaScaleRefC, EtaScaleRefD);
+
     }
 
     // loop over all the cells,
@@ -734,7 +866,142 @@ int main(int argc, char* argv[])
       calibTable.push_back(AcalibTable.at(0));
 
     }
+  } // else if (mode==3 || mode==31 ||  mode==32 || mode==33)
+  else if (mode==4||mode==41)
+  {
+    // mode 4, is to fit the IC by applying the IC of the Seed crystal to the rawEnergy of the whole SC.
+    //   Each time fit only one crystal in the following steps:
+    //   1.) select events with electrons having there Seed hits in the crystal of the IC to be fitted.
+    //   2.) the minimization varies the IC and recalculates the electron's energy by applying the IC of 
+    //        the cyrstal being fitted to the raw energy of the whole SC (many crystals/hits). 
+
+    // mode 41, same as mode4 but with 4 runs ABCD eta-scale applied.
+
+    if (debug>0) std::cout << " Step 2: Fit cell-by-cell, inside mode 4 or 41" << std::endl;
+    // but initialize calibTableRef using the full table
+    fcn.initCalibTableRef(calibtable_ref);
+
+    // eta scale
+    if (mode==41)
+    {
+      if (debug>0) std::cout << " Step 2: Apply Eta-scale to all events, inside mode 41" << std::endl;
+      // apply ref eta-scale
+      ApplyEtaScaleToAllEventsABCD(EtaScaleRefA, EtaScaleRefB, EtaScaleRefC, EtaScaleRefD);
+
+    }
+
+    // loop over all the cells,
+    // select only those events in this cell,
+    // define only this cell one single parameter to be fitted
+    for (int ic=0; ic<(int)cells.size(); ic++)
+    {
+      // cell ix, iy, iz
+      const int ix = cells.at(ic).at(0);
+      const int iy = cells.at(ic).at(1);
+      const int iz = cells.at(ic).at(2);
+
+      // select events for only this cell
+      nEvents = SelectEventsInOneSeed(ix, iy, iz, doEvenOdd, _combine);
+
+      // if nEvents==0, it means no electrons in these events give its energy of 10% to this fitting cells,
+      //   therefore, I skip this cell here, set it to be a default value 1.0 0.1, and continue the next cell
+      if (nEvents==0)
+      {
+        std::cout << "Skip cell (ix, iy, iz) = (" << ix << "," << iy << "," << iz << "): No sufficient events. \n" << std::endl;
+        calibRecord AcalibRecord = {ic, ix, iy, iz, 1.0, 0.1, 0, 0};
+        calibTable.push_back(AcalibRecord);
+        continue;
+      }
+      //
+      // define the signal fraction
+      nSignals = int(signalFraction*(double)nEvents);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, for Cell: " << std::endl;
+      std::cout << "ic = " << ic << ", " << "nEvents = " << nEvents << std::endl;
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, initialize data " << std::endl;
+      // initialize fcn using this set of events
+      fcn.initDataSeed(nEvents, nSignals,
+                   E1, EReg1, Eta1, Phi1, UseEle1, RawEEcal1,
+                   E2, EReg2, Eta2, Phi2, UseEle2, RawEEcal2,
+                   debug, method);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, initialize PDF " << std::endl;
+      // initialize PDF
+      fcn.initBWGSParameters(_FitWindowHigh, // windowHigh
+                             _FitWindowLow, // windowLow
+                             _Zmass, //voigtMass
+                             gaus_reso, //voightResolution
+                             2.4952, //voigtWidth
+                             nSignals,
+                             nEvents);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, initialize one-cell calibTable" << std::endl;
+      calibRecord AcalibRecord = {ic, ix, iy, iz, 1.0, 0.01, 0, 0};
+      std::vector<calibRecord> AcalibTable;
+      AcalibTable.push_back(AcalibRecord);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, initialize one-cell calibTable" << std::endl;
+      // initialize calibTable in fcn using the only-one-cell calibTable above
+      fcn.initCalibTableFromVector(AcalibTable);
+
+      // also define a one-par MnUserParameters
+      MnUserParameters Apars;
+      char name[100];
+      sprintf(name, "par_ix%d_iy%d_iz%d", ix, iy, iz);
+      Apars.Add(name, 1.0, 0.01);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, define MnMigrad" << std::endl;
+      // define migrad
+      MnMigrad migrad(fcn, Apars);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, do fit" << std::endl;
+      // minimize
+      FunctionMinimum min = migrad();
+
+      // hesse
+      MnHesse hesse;
+      hesse(fcn, min);
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, print output" << std::endl;
+      // print min
+      std::cout << "minimum of cell (ix, iy, iz) = (" << ix << "," << iy << "," << iz << "): \n"
+      << min << std::endl;
+
+      // update MnUserParameters
+      Apars = min.UserParameters();
+
+      //
+      if (debug>0)
+      {
+        // print scan parameter
+        // plot
+        MnPlot plot;
+        // scan parameters
+        MnParameterScan parscan(fcn, Apars);
+        if (fabs(Apars.Value(0))<3&&fabs(Apars.Error(0))<1.0)
+        {
+          std::cout << "Scan of Parameter " << Apars.GetName(0) << " : " << std::endl;
+          std::vector< std::pair<double, double> > points_scan = parscan(0);
+          plot(points_scan);
+        }
+        else
+        {
+          std::cout << "Scan of Parameter " << Apars.GetName(0) << " : Not pass result quality check.. " << std::endl;
+        }
+      }
+
+      if (debug>0) std::cout << " Step 2: Fit cell-by-cell, update calibTable and store output" << std::endl;
+      // update calibTable, we only take this single cell.
+      AcalibTable.at(0).c = Apars.Value(0);
+      AcalibTable.at(0).cerr = Apars.Error(0);
+
+      // push back the fitted result, again, only has one parameter
+      calibTable.push_back(AcalibTable.at(0));
+    }
   }
+
+
 //////// 
  
   if (debug>0) std::cout << " Step 3: Check the results" << std::endl;
