@@ -1,7 +1,7 @@
 #!/bin/sh
 
 NTIME="2"
-tag="_method8_EvenOdd0"
+tag="_method8_mode41_evenodd1"
 
 outdir="out_${NTIME}${tag}"
 out="calibTable_out_${NTIME}_ABCD.dat"

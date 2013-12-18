@@ -25,7 +25,8 @@ GAUSRESO="1.0"
 HITENERGYFRACTION="0.01"
 
 #Eta scale file
-ETASCALEFILE="etascale_V8Elec_Mode76_Method7_A_1.dat;etascale_V8Elec_Mode76_Method7_B_1.dat;etascale_V8Elec_Mode76_Method7_C_1.dat;etascale_V8Elec_Mode76_Method7_D_1.dat"
+#ETASCALEFILE="etascale_V8Elec_Mode76_Method7_A_1.dat;etascale_V8Elec_Mode76_Method7_B_1.dat;etascale_V8Elec_Mode76_Method7_C_1.dat;etascale_V8Elec_Mode76_Method7_D_1.dat"
+ETASCALEFILE="etascale_V8Elec_Mode76_Method7_Odd_A_1.dat;etascale_V8Elec_Mode76_Method7_Odd_B_1.dat;etascale_V8Elec_Mode76_Method7_Odd_C_1.dat;etascale_V8Elec_Mode76_Method7_Odd_D_1.dat"
 
 #debug
 DEBUG="1"
