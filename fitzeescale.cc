@@ -57,12 +57,16 @@ std::string _combine = "EE";
 // fitScale : fit calibration or energy scale, calibration is per-cell, energy scale is per-electron
 bool fitscale = true;
 
+// even or odd events
+int doEvenOdd = 0; // 0 for not to split, 1 for odd, 2 for even
+
+
 int main(int argc, char* argv[])
 {
   if (argc<4)
   {
     std::cout << argv[0] << " <mode> <input_file.root> <output_file.root> \\\n"
-              << "            <signalFraction> <method> <GaussResolution> <RegVersion> <debug> <parameter_file_reference.dat>\n"
+              << "            <signalFraction> <method> <GaussResolution> <RegVersion> <debug> <parameter_file_reference.dat> <doEvenOdd>\n"
     << std::endl;
     return 0;
   }
@@ -97,13 +101,18 @@ int main(int argc, char* argv[])
 
   if (argc>9)
   {
-    sprintf(parfile_ref, "%s", argv[9]);
+    doEvenOdd = atoi(argv[9]);
+  }
+
+  if (argc>10)
+  {
+    sprintf(parfile_ref, "%s", argv[10]);
   }
  
   // check 
   if (mode==73||mode==75||mode==77)
   {
-    if (argc<=9) 
+    if (argc<=10) 
     {
       std::cout << "Missing parameters reference file. Please run " << argv[0] << " to print usage information. " << std::endl;  
       return 1;
@@ -118,6 +127,7 @@ int main(int argc, char* argv[])
   std::cout << "  signalFraction = " << signalFraction << std::endl;
   std::cout << "  GaussianResolution = " << gaus_reso << std::endl;
   std::cout << "  RegVersion = " << RegVersion << std::endl;
+  std::cout << "  doEvenOdd = " << doEvenOdd << std::endl;
   if (mode==73||mode==75||mode==77) std::cout << "  Parameter Reference File = " << parfile_ref << std::endl;
   
   std::cout << " Start program. " << std::endl;
@@ -137,7 +147,7 @@ int main(int argc, char* argv[])
   nSignals = nEvents;
 
   // Fill all events into vectors
-  FillAllEvents(tree, 2, RegVersion, fitscale);
+  FillAllEvents(tree, 2, RegVersion, fitscale, doEvenOdd);
   if (debug>0) std::cout << " Step 1: fill all events: " << nEvents << std::endl;
   
   // delete the chain no more need it
@@ -732,7 +742,6 @@ int main(int argc, char* argv[])
       // apply ref eta-scale
       ApplyEtaScaleToAllEvents(EtaScaleRef);
     }
-
     // give eta-bin numbers
     nEvents = AddEtaBinNumberToElectrons(EtaScale, _combine);
 
