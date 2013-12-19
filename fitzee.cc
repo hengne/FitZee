@@ -50,6 +50,9 @@ double gaus_reso = 2.0;
 // energy fraction of one crystal in fit
 double hitEnergyFraction = 0.3;
 
+// Energy regression Version
+std::string RegVersion="V6Elec";
+
 int debug = 0;
 char rootfile_in[3000];
 char rootfile_out[3000];
@@ -75,7 +78,7 @@ int main(int argc, char* argv[])
     std::cout << argv[0] << " <mode> <input_file.root> <output_file.root> \\\n"
               << " <input_calibTable.dat> <out_calibTable.dat> <ref_calibTable.dat>\\\n" 
               << " <signalFraction> <method> <GaussResolution> <hitEnergyFraction> <debug> \\\n"
-              << " <doEvenOdd> <etascale_reference_files>"
+              << " <doEvenOdd> <RegVersion> <etascale_reference_files>"
     << std::endl;
     return 0;
   }
@@ -118,13 +121,18 @@ int main(int argc, char* argv[])
 
   if (argc>13)
   {
-    sprintf(etascale_ref, "%s", argv[13]);
+    RegVersion = std::string(argv[13]);
+  }
+
+  if (argc>14)
+  {
+    sprintf(etascale_ref, "%s", argv[14]);
   } 
 
   // check
   if (mode==31||mode==32)
   {
-    if (argc<=13)
+    if (argc<=14)
     {
       std::cout << "Missing etascale reference file. Please run " << argv[0] << " to print usage information. " << std::endl;
       return 1;
@@ -134,14 +142,14 @@ int main(int argc, char* argv[])
   // mode 33 41
   if (mode==33||mode==41)
   {
-    if (argc<=13)
+    if (argc<=14)
     {
       std::cout << "Missing etascale reference file. Please run " << argv[0] << " to print usage information. " << std::endl;
       return 1;
     }
     else
     {
-      std::string s(argv[13]);
+      std::string s(argv[14]);
       std::string delimiter = ";";
       std::vector<std::string> ss;
       size_t pos = 0;
@@ -174,6 +182,7 @@ int main(int argc, char* argv[])
   std::cout << "  GaussianResolution = " << gaus_reso << std::endl;
   std::cout << "  hitEnergyFraction = " << hitEnergyFraction << std::endl;
   std::cout << "  doEvenOdd = " << doEvenOdd << std::endl;
+  std::cout << "  RegVersion = " << RegVersion << std::endl;
   if (mode==31||mode==32) std::cout << "  EtaScale Reference File = " << etascale_ref << std::endl; 
   if (mode==33||mode==41) 
   {
@@ -195,7 +204,8 @@ int main(int argc, char* argv[])
   SetTreeBranch(tree);
 
   // Fill all events into vectors
-  FillAllEvents(tree, 0);
+  //FillAllEvents(tree, 0);
+  FillAllEvents(tree, 2, RegVersion, false);
   
   // delete the chain no more need it
   tree->Delete();

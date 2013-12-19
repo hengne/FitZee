@@ -24,6 +24,9 @@ GAUSRESO="1.0"
 #Hit energy fraction
 HITENERGYFRACTION="0.01"
 
+#RegVersion
+REGVERSION="V7Elec"
+
 #Eta scale file
 #ETASCALEFILE="etascale_V8Elec_Mode76_Method7_A_1.dat;etascale_V8Elec_Mode76_Method7_B_1.dat;etascale_V8Elec_Mode76_Method7_C_1.dat;etascale_V8Elec_Mode76_Method7_D_1.dat"
 ETASCALEFILE="etascale_V8Elec_Mode76_Method7_Odd_A_1.dat;etascale_V8Elec_Mode76_Method7_Odd_B_1.dat;etascale_V8Elec_Mode76_Method7_Odd_C_1.dat;etascale_V8Elec_Mode76_Method7_Odd_D_1.dat"
@@ -110,6 +113,7 @@ echo "run"
                ${HITENERGYFRACTION} \
                ${DEBUG} \
                ${DOEVENODD} \
+               ${REGVERSION} \
                ${ETASCALEFILE} \
            &> ${LOGFILE}
 
@@ -117,7 +121,7 @@ echo "run"
 date
 
 echo "copy output"
-OUTDIR="${SOURCE}/out_${NTIME}_method${METHOD}_mode${MODE}_evenodd${DOEVENODD}"
+OUTDIR="${SOURCE}/out_${NTIME}_method${METHOD}_mode${MODE}_evenodd${DOEVENODD}_reg${REGVERSION}"
 if [ ! -d $OUTDIR ];
 then
   mkdir $OUTDIR
