@@ -28,6 +28,9 @@ GAUSRESO="1.0"
 #
 ETASCALEREF=$6
 
+# 
+DOEVENODD=$7
+
 #debug
 DEBUG="1"
 
@@ -85,14 +88,16 @@ echo "run"
                0.9999 \
                ${METHOD} ${GAUSRESO} \
                ${REGVERSION} \
-               ${DEBUG} ${ETASCALEREF}\
+               ${DEBUG} \
+               ${DOEVENODD} \
+               ${ETASCALEREF}\
            &> ${LOGFILE}
 
 
 date
 
 echo "copy output"
-OUTDIR="${SOURCE}/out_$REGVERSION_mode${MODE}_method${METHOD}_${NTIMES}"
+OUTDIR="${SOURCE}/out_${REGVERSION}_mode${MODE}_method${METHOD}_evenodd${DOEVENODD}_${NTIMES}"
 if [ ! -d $OUTDIR ];
 then
   mkdir $OUTDIR
